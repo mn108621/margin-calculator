@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>保證金計算機（多頭／空頭）</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      max-width: 500px;
+      margin: auto;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      margin-top: 15px;
+      width: 100%;
+      padding: 10px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    .result {
+      margin-top: 15px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+    }
+    .section-title {
+      margin-top: 30px;
+      font-weight: bold;
+      font-size: 16px;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>多／空 保證金計算機</h2>
+
+    <div class="section-title">多頭（做多）</div>
+    <label>願意虧損金額 (USDT)
+      <input type="number" id="riskLong" placeholder="例如：100">
+    </label>
+    <label>槓桿倍數
+      <input type="number" id="leverageLong" placeholder="例如：10">
+    </label>
+    <label>開倉價
+      <input type="number" id="entryLong" placeholder="例如：20000">
+    </label>
+    <label>止損價
+      <input type="number" id="stopLong" placeholder="例如：19000">
+    </label>
+    <button onclick="calculateMargin('long')">計算多頭保證金</button>
+    <div class="result" id="resultLong"></div>
+
+    <div class="section-title">空頭（做空）</div>
+    <label>願意虧損金額 (USDT)
+      <input type="number" id="riskShort" placeholder="例如：100">
+    </label>
+    <label>槓桿倍數
+      <input type="number" id="leverageShort" placeholder="例如：10">
+    </label>
+    <label>開倉價
+      <input type="number" id="entryShort" placeholder="例如：20000">
+    </label>
+    <label>止損價
+      <input type="number" id="stopShort" placeholder="例如：21000">
+    </label>
+    <button onclick="calculateMargin('short')">計算空頭保證金</button>
+    <div class="result" id="resultShort"></div>
+  </div>
+
+  <script>
+    function calculateMargin(type) {
+      const risk = parseFloat(document.getElementById(`risk${capitalize(type)}`).value);
+      const leverage = parseFloat(document.getElementById(`leverage${capitalize(type)}`).value);
+      const entry = parseFloat(document.getElementById(`entry${capitalize(type)}`).value);
+      const stop = parseFloat(document.getElementById(`stop${capitalize(type)}`).value);
+      const resultField = document.getElementById(`result${capitalize(type)}`);
+
+      if (!risk || !leverage || !entry || !stop || stop <= 0 || leverage <= 0) {
+        resultField.innerText = '請輸入所有有效數值';
+        return;
+      }
+
+      let stopLossPercentRaw;
+      if (type === 'long') {
+        stopLossPercentRaw = (entry / stop - 1) * 100;
+      } else {
+        stopLossPercentRaw = (stop / entry - 1) * 100;
+      }
+      const stopLossPercent = Math.trunc(stopLossPercentRaw * 100) / 100;
+
+      if ((type === 'long' && stop >= entry) || (type === 'short' && stop <= entry)) {
+        resultField.innerText = '止損價設定錯誤：請確認止損方向與開倉價關係';
+        return;
+      }
+
+      const margin = (risk / leverage) / stopLossPercent * 100;
+      resultField.innerText = `所需保證金：約 ${margin.toFixed(2)} USDT`;
+    }
+
+    function capitalize(word) {
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    }
+  </script>
+</body>
+</html>
